@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spare Parts Desk | Kaveri Spares &amp; Hydraulics</title>
+<meta name="description" content="Spare parts inventory dashboard — available, low and out of stock, recommendations, AI assistant and request approvals.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+
+  <!-- ============ SIDEBAR (like reference) ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">SP</div>
+      <div><strong>Spare Parts Desk</strong><small>Kaveri Spares &amp; Hydraulics</small></div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button class="active" data-page="dashboard"><span class="nav-ico">▦</span> Dashboard</button>
+      <button data-page="inventory"><span class="nav-ico">☰</span> Inventory <em id="navLow" class="count"></em></button>
+      <button data-page="recommendations"><span class="nav-ico">✦</span> Recommendations</button>
+      <button data-page="ai"><span class="nav-ico">⚒</span> AI Assistant</button>
+      <button data-page="requests"><span class="nav-ico">✓</span> Requests <em id="navReq" class="count"></em></button>
+    </nav>
+
+    <div class="sidebar-user">
+      <label for="userName">Your name (used for requests &amp;<br>approvals)</label>
+      <input id="userName" type="text" placeholder="Enter your name" autocomplete="name">
+      <p class="api-status" id="apiStatus">● Connecting…</p>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <header class="topbar">
+      <div><h1 id="pageTitle">Dashboard</h1><p id="pageSub">Available, low &amp; out-of-stock visibility across 6 stores + 2 warehouses</p></div>
+      <div class="top-actions">
+        <button class="btn btn-light" id="exportBtn">⬇ Export CSV</button>
+        <button class="btn btn-primary" data-goto="requests">Review Requests →</button>
+      </div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section class="page active" id="page-dashboard">
+      <div class="kpi-grid" id="kpiGrid"></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head"><h3>Stock Health</h3><span>Pie chart • 1,008 SKU × Location slots</span></div>
+          <div class="chart-row"><canvas id="healthChart" width="250" height="250"></canvas><div class="legend" id="healthLegend"></div></div>
+          <p class="note">Available &gt; 10 units • Low 1–10 units • Out of stock = 0 units. Stock exists in the network — just not always at the right store.</p>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Stock by Category</h3><span>units in stock</span></div>
+          <div class="chart-row"><canvas id="catChart" width="250" height="250"></canvas><div class="legend" id="catLegend"></div></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-head"><h3>Stock by Location</h3><span>units</span></div><div id="locBars"></div></div>
+        <div class="card"><div class="card-head"><h3>Top 10 Fast-Moving Parts</h3><span>sold in 60 days</span></div>
+          <div class="table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Sold</th><th>Stock</th><th>Status</th></tr></thead><tbody id="fastBody"></tbody></table></div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Urgent Attention — Empty &amp; Lowest Locations</h3><span>fix by transfer first</span></div>
+        <div class="table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Location</th><th>Stock</th><th>Local Demand</th><th>Status</th><th></th></tr></thead><tbody id="urgentBody"></tbody></table></div></div>
+    </section>
+
+    <!-- INVENTORY -->
+    <section class="page" id="page-inventory">
+      <div class="card">
+        <div class="card-head"><h3>Inventory — Complete Product Details</h3><span id="invCount"></span></div>
+        <div class="filters">
+          <input id="fSearch" type="search" placeholder="Search SKU, product, machine model…">
+          <select id="fCategory"><option value="">All Categories</option></select>
+          <select id="fModel"><option value="">All Machine Models</option></select>
+          <select id="fStatus"><option value="">All Status</option><option>In Stock</option><option>Low Stock</option><option>Critical</option><option>Out of Stock</option></select>
+          <select id="fSort"><option value="cover">Sort: Lowest Cover</option><option value="demand">Demand: High → Low</option><option value="stockAsc">Stock: Low → High</option><option value="stockDesc">Stock: High → Low</option><option value="name">Name A–Z</option></select>
+        </div>
+        <div class="table-wrap tall"><table><thead><tr><th>SKU</th><th>Product</th><th>Machine Model</th><th>Category</th><th>Total Stock</th><th>Sold 60d</th><th>Demand</th><th>Cover</th><th>Status</th><th>Best Supplier</th><th></th></tr></thead><tbody id="invBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- RECOMMENDATIONS (separate page — no sign-in needed) -->
+    <section class="page" id="page-recommendations">
+      <div class="card">
+        <div class="card-head"><h3>Recommendations</h3><span>transfer first, then buy • generated from your data</span></div>
+        <div id="recSummary"></div><div id="recList" class="rec-list full"></div>
+      </div>
+    </section>
+
+    <!-- AI ASSISTANT (separate page) -->
+    <section class="page" id="page-ai">
+      <div class="card ai-card">
+        <div class="card-head"><h3>AI Assistant</h3><span>answers from your live inventory data</span></div>
+        <div class="chips" id="chips"></div>
+        <div class="chat" id="chat"></div>
+        <form class="chat-form" id="chatForm"><input id="chatInput" placeholder="Ask: stock of BRG-1000, out of stock, cheapest supplier for BLT-1003…" autocomplete="off"><button class="btn btn-primary">Send ➤</button></form>
+        <p class="note">Tip: mention any SKU, category (Belts, Filters…), location (Hubli, Belgaum WH…) or words like “reorder”, “transfer”, “cheapest”.</p>
+      </div>
+    </section>
+
+    <!-- REQUESTS -->
+    <section class="page" id="page-requests">
+      <div class="kpi-grid small" id="reqKpis"></div>
+      <div class="card">
+        <div class="card-head"><h3>Create New Request</h3><span>supplier &amp; price auto-filled • your sidebar name is recorded</span></div>
+        <form class="request-form" id="newReqForm">
+          <select id="nrSku" required></select>
+          <input id="nrQty" type="number" min="1" placeholder="Quantity">
+          <input id="nrNote" placeholder="Reason / note (optional)">
+          <button class="btn btn-primary">Create Request</button>
+        </form>
+        <p class="note" id="formMsg"></p>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Requests — Approve / Reject Required Items</h3><span>decisions saved permanently by the API</span></div>
+        <div class="filters">
+          <select id="rStatus"><option value="">All Status</option><option>Pending</option><option>Approved</option><option>Rejected</option></select>
+          <select id="rSource"><option value="">All Sources</option><option>Purchase Order</option><option>AI Recommendation</option><option>Manual</option></select>
+          <input id="rSearch" type="search" placeholder="Search SKU / product / supplier…">
+        </div>
+        <div class="table-wrap tall"><table><thead><tr><th>Request</th><th>Product</th><th>Supplier</th><th>Qty</th><th>Est. Cost</th><th>Expected</th><th>Source / By</th><th>Status</th><th>Decision</th></tr></thead><tbody id="reqBody"></tbody></table></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-head"><h3>Purchase Orders</h3><span>43 orders</span></div>
+          <div class="table-wrap tall"><table><thead><tr><th>PO</th><th>Supplier</th><th>SKU</th><th>Qty</th><th>Expected</th><th>Status</th></tr></thead><tbody id="poBody"></tbody></table></div></div>
+        <div class="card"><div class="card-head"><h3>Best Supplier per Product</h3><span>cheapest of 205 offers</span></div>
+          <div class="table-wrap tall"><table><thead><tr><th>SKU</th><th>Product</th><th>Best Supplier</th><th>Price</th><th>Lead</th><th>MOQ</th></tr></thead><tbody id="supBody"></tbody></table></div></div>
+      </div>
+    </section>
+
+    <footer>Spare Parts Desk • Kaveri Spares &amp; Hydraulics • Python API + HTML / CSS / JavaScript • Data snapshot 16 Nov 2026</footer>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="/js/app.js"></script>
+</body>
+</html>
